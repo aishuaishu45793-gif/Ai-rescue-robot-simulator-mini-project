@@ -1,0 +1,2732 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Rescue Robot: Disaster Command Center</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+    />
+    <style>
+      :root {
+        --bg: #0c1822;
+        --pan: #142532;
+        --ln: #25404f;
+        --tx: #e6eef2;
+        --mu: #8fa6b3;
+        --cy: #27c4d6;
+        --am: #f2b01e;
+        --rd: #e5483b;
+        --gn: #33b86c;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          15px/1.5 system-ui,
+          Segoe UI,
+          sans-serif;
+        background: var(--bg);
+        color: var(--tx);
+        display: flex;
+        min-height: 100vh;
+      }
+      aside {
+        width: 210px;
+        background: #09131b;
+        border-right: 1px solid var(--ln);
+        padding: 12px 8px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: auto;
+        flex: none;
+      }
+      aside h1 {
+        font-size: 16px;
+        margin: 0 6px 10px;
+        color: var(--cy);
+      }
+      aside button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: none;
+        color: var(--mu);
+        border: 0;
+        padding: 7px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      aside button:hover {
+        background: var(--pan);
+      }
+      aside button.on {
+        background: var(--cy);
+        color: #04141a;
+        font-weight: 600;
+      }
+      main {
+        flex: 1;
+        padding: 18px;
+        min-width: 0;
+      }
+      @media (max-width: 800px) {
+        body {
+          display: block;
+        }
+        aside {
+          width: auto;
+          height: auto;
+          position: static;
+          display: flex;
+          overflow-x: auto;
+        }
+        aside h1 {
+          display: none;
+        }
+        aside button {
+          white-space: nowrap;
+          width: auto;
+        }
+      }
+      .pg {
+        display: none;
+      }
+      .pg.on {
+        display: block;
+      }
+      h2 {
+        margin: 0 0 12px;
+      }
+      h3 {
+        margin: 18px 0 8px;
+        color: var(--cy);
+      }
+      button,
+      select,
+      input,
+      textarea {
+        font: inherit;
+      }
+      button {
+        background: var(--cy);
+        color: #04141a;
+        border: 0;
+        padding: 6px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button.alt {
+        background: #34505f;
+        color: var(--tx);
+      }
+      button.red {
+        background: var(--rd);
+        color: #fff;
+      }
+      input,
+      select,
+      textarea {
+        padding: 6px;
+        border: 1px solid var(--ln);
+        border-radius: 5px;
+        background: #0c1822;
+        color: var(--tx);
+        max-width: 100%;
+      }
+      .pan,
+      .card {
+        background: var(--pan);
+        border: 1px solid var(--ln);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: flex-end;
+        margin-bottom: 8px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      td,
+      th {
+        border-bottom: 1px solid var(--ln);
+        padding: 6px 8px;
+        text-align: left;
+      }
+      th {
+        color: var(--mu);
+        font-weight: 500;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 10px;
+      }
+      .kg {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .kpi {
+        background: var(--pan);
+        border-left: 5px solid;
+        border-radius: 8px;
+        padding: 10px 14px;
+      }
+      .kpi b {
+        display: block;
+        font-size: 30px;
+        line-height: 1.1;
+      }
+      .kpi span {
+        color: var(--mu);
+      }
+      .d3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px;
+      }
+      .bar {
+        height: 10px;
+        background: #0c1822;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        background: var(--cy);
+      }
+      .tag {
+        padding: 1px 8px;
+        border-radius: 10px;
+        font-size: 12px;
+        background: #34505f;
+      }
+      .Critical,
+      .Immediate {
+        background: var(--rd);
+      }
+      .Warning,
+      .Delayed {
+        background: #a87400;
+      }
+      .Informational,
+      .Minor {
+        background: #2563eb;
+      }
+      .card img {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-bottom: 6px;
+      }
+      .card p {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+      a {
+        color: var(--cy);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 1100px) {
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+      canvas {
+        max-width: 100%;
+        border: 2px solid var(--ln);
+        background: #fff;
+        touch-action: none;
+      }
+      #map {
+        height: 520px;
+        border-radius: 8px;
+        border: 1px solid var(--ln);
+      }
+      pre {
+        background: #060e14;
+        color: #a9dccf;
+        padding: 8px;
+        border-radius: 6px;
+        min-height: 90px;
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      .warn {
+        background: #3a2f0b;
+        border-left: 4px solid var(--am);
+        padding: 8px 10px;
+        margin: 8px 0;
+        border-radius: 4px;
+      }
+      .hero {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 18px;
+        align-items: center;
+      }
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+      .hero img {
+        width: 100%;
+        max-height: 340px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .hero figure {
+        margin: 0;
+      }
+      .hero figcaption {
+        font-size: 12px;
+        color: var(--mu);
+      }
+      .rb button {
+        width: 76px;
+        height: 48px;
+        margin: 2px;
+      }
+
+      :root {
+        --bg: #0b1030;
+        --pan: #161d52;
+        --ln: #34419c;
+        --tx: #f1f4ff;
+        --mu: #a5b0e8;
+        --cy: #22d3ee;
+        --am: #fbbf24;
+        --rd: #fb4f6b;
+        --gn: #34d399;
+      }
+      body {
+        background:
+          radial-gradient(900px 480px at 8% -8%, #6d28d955, transparent),
+          radial-gradient(800px 480px at 100% 0, #0ea5e955, transparent),
+          radial-gradient(700px 400px at 60% 110%, #ec489944, transparent),
+          var(--bg);
+      }
+      aside {
+        background: linear-gradient(180deg, #120b3a, #0a1230);
+      }
+      aside h1 {
+        background: linear-gradient(90deg, #22d3ee, #f472b6);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      aside button.on {
+        background: linear-gradient(90deg, #22d3ee, #8b5cf6);
+        color: #fff;
+      }
+      button {
+        background: linear-gradient(135deg, #22d3ee, #6366f1);
+        color: #fff;
+      }
+      button.alt {
+        background: #3a4aa8;
+      }
+      button.red {
+        background: linear-gradient(135deg, #fb4f6b, #f97316);
+      }
+      .pan,
+      .card {
+        background: linear-gradient(160deg, #1a2263, #141a4d);
+      }
+      .card {
+        border-top: 3px solid #22d3ee;
+      }
+      .grid > .card:nth-child(4n + 2) {
+        border-top-color: #f472b6;
+      }
+      .grid > .card:nth-child(4n + 3) {
+        border-top-color: #fbbf24;
+      }
+      .grid > .card:nth-child(4n + 4) {
+        border-top-color: #34d399;
+      }
+      .kpi {
+        background: linear-gradient(135deg, #1e2a8a, #161d52);
+        box-shadow: 0 4px 14px #0006;
+      }
+      .bar i {
+        background: linear-gradient(90deg, #22d3ee, #a78bfa);
+      }
+      .rhero {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 18px;
+        align-items: center;
+        background: linear-gradient(120deg, #4f46e5, #0ea5e9 60%, #14b8a6);
+        border-radius: 16px;
+        padding: 22px;
+        margin-bottom: 14px;
+        box-shadow: 0 8px 24px #0007;
+      }
+      .rhero h2 {
+        font-size: 30px;
+        margin: 0 0 8px;
+      }
+      .rhero p {
+        margin: 0 0 12px;
+      }
+      .rhero button {
+        background: #fff;
+        color: #1e1b4b;
+      }
+      @media (max-width: 800px) {
+        .rhero {
+          grid-template-columns: 1fr;
+        }
+      }
+      #tmap {
+        height: 480px;
+        border-radius: 12px;
+        border: 1px solid var(--ln);
+      }
+      #tinfo {
+        margin-top: 8px;
+      }
+      #tinfo ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+        color: var(--mu);
+      }
+      #tlive {
+        margin-top: 6px;
+        font-weight: 600;
+        color: #fde047;
+      }
+
+      .leaflet-popup-content,
+      .leaflet-control-layers,
+      .leaflet-control-layers label {
+        color: #14232c;
+      }
+      .leaflet-control-layers input {
+        padding: 0;
+        background: none;
+        border: 0;
+        width: auto;
+      }
+      .leaflet-container {
+        font: inherit;
+      }
+      .leaflet-popup-content b {
+        color: #0b1030;
+      }
+      .pg.on {
+        animation: fadeIn 0.35s;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+      }
+      .card,
+      .kpi {
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .card:hover,
+      .kpi:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 24px #0008;
+      }
+      button {
+        transition:
+          transform 0.15s,
+          filter 0.15s;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.12);
+      }
+      button:active {
+        transform: scale(0.96);
+      }
+      .rm {
+        font-size: 18px;
+        background: #fff;
+        border: 3px solid #22d3ee;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: ring 1.6s infinite;
+      }
+      @keyframes ring {
+        0% {
+          box-shadow: 0 0 0 0 #22d3eecc;
+        }
+        70% {
+          box-shadow: 0 0 0 14px #22d3ee00;
+        }
+        100% {
+          box-shadow: 0 0 0 0 #22d3ee00;
+        }
+      }
+      .bot {
+        cursor: pointer;
+        text-align: center;
+      }
+      .bot svg {
+        width: 100%;
+        max-width: 250px;
+        animation: flt 3s ease-in-out infinite;
+        filter: drop-shadow(0 8px 12px #0008);
+      }
+      @keyframes flt {
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+      .bot .eye {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: blink 4.5s infinite;
+      }
+      @keyframes blink {
+        0%,
+        94%,
+        100% {
+          transform: scaleY(1);
+        }
+        96% {
+          transform: scaleY(0.08);
+        }
+      }
+      .bot .ant circle {
+        animation: pls 1.2s infinite;
+      }
+      @keyframes pls {
+        50% {
+          fill: #fde047;
+          r: 12;
+        }
+      }
+      .bot .hb {
+        stroke-dasharray: 160;
+        animation: hb 2s linear infinite;
+      }
+      @keyframes hb {
+        from {
+          stroke-dashoffset: 160;
+        }
+        to {
+          stroke-dashoffset: -160;
+        }
+      }
+      .bot .arm {
+        transform-box: fill-box;
+        transform-origin: 50% 8%;
+      }
+      .bot:hover .arm.r {
+        animation: wv 0.5s infinite alternate;
+      }
+      .bot:hover .arm.l {
+        animation: wv 0.5s 0.25s infinite alternate-reverse;
+      }
+      @keyframes wv {
+        from {
+          transform: rotate(-8deg);
+        }
+        to {
+          transform: rotate(30deg);
+        }
+      }
+      .bot #mouth {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .bot.talk #mouth {
+        animation: tk 0.18s infinite alternate;
+      }
+      @keyframes tk {
+        to {
+          transform: scaleY(3.5);
+        }
+      }
+      .bub {
+        display: inline-block;
+        background: #fff;
+        color: #111;
+        border-radius: 14px;
+        padding: 6px 12px;
+        margin-top: 6px;
+        font-size: 13px;
+        max-width: 280px;
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <h1>AI RESCUE ROBOT</h1>
+      <div id="nav"></div>
+    </aside>
+    <main>
+      <section class="pg" id="home">
+        <div class="hero">
+          <div>
+            <h2 style="font-size: 32px; line-height: 1.15">
+              When buildings fall and water rises, every minute decides who is
+              found.
+            </h2>
+            <p>
+              A single command center for disaster response: plan robot
+              searches, track survivors, run rescue missions, manage teams and
+              shelters, raise alerts and keep people safe with first aid and
+              preparedness guidance.
+            </p>
+            <div class="row">
+              <button onclick="show('dash')">Open dashboard</button
+              ><button class="alt" onclick="show('sim')">
+                Run a rescue simulation</button
+              ><button class="alt" onclick="show('mapp')">View live map</button>
+            </div>
+          </div>
+          <figure>
+            <img id="hI" alt="" style="display: none" />
+            <figcaption id="hC"></figcaption>
+          </figure>
+        </div>
+        <div class="pan" style="margin-top: 14px">
+          In February 2023 earthquakes struck Turkey and Syria and collapsed
+          thousands of buildings. Rescuers worked day and night to reach people
+          trapped in rubble. Robots that can enter unstable ruins and find a
+          safe path reduce the danger to the people searching.
+        </div>
+        <div class="warn">
+          Sample incidents, robots and survivors are shown for demonstration.
+          Alerts here do not contact emergency services. In a real emergency
+          call 112 (India).
+        </div>
+        <h3>From the field</h3>
+        <div class="grid" id="hG"></div>
+      </section>
+
+      <section class="pg" id="dash"></section>
+
+      <section class="pg" id="mapp">
+        <h2>Live rescue map</h2>
+        <div class="row">
+          <button id="bd">Deploy ready robots</button
+          ><button id="bq">Show real earthquakes (last 24 hours)</button
+          ><button id="bh">Find hospitals near map centre</button
+          ><span id="mst"></span>
+        </div>
+        <div id="map"></div>
+        <p>
+          Use the layer control on the map to switch incidents, robots,
+          survivors and shelters. Click the map to set the location for your
+          next alert, robot, survivor or shelter.
+        </p>
+      </section>
+
+      <section class="pg" id="sim">
+        <h2>Rescue simulator</h2>
+        <div class="row">
+          <label
+            >Scenario<br /><select id="scn">
+              <option value="quake">Earthquake</option>
+              <option value="flood">Flood</option>
+              <option value="fire">Fire</option>
+              <option value="collapse">Building collapse</option>
+            </select></label
+          >
+          <label
+            >Seed<br /><input
+              id="seed"
+              type="number"
+              value="7"
+              style="width: 70px"
+          /></label>
+          <label
+            >Route planner<br /><select id="alg">
+              <option value="astar">A*</option>
+              <option value="dijkstra">Dijkstra</option>
+              <option value="bfs">BFS</option>
+              <option value="dfs">DFS</option>
+            </select></label
+          >
+          <label
+            ><input type="checkbox" id="risk" checked /> Avoid hazards</label
+          ><label><input type="checkbox" id="aft" checked /> Aftershocks</label>
+          <label
+            >Speed <input type="range" id="spd" min="1" max="10" value="6"
+          /></label>
+          <label
+            >Paint<br /><select id="tool">
+              <option value="wall">Rubble</option>
+              <option value="water">Water</option>
+              <option value="fire">Fire</option>
+              <option value="victim">Survivor</option>
+              <option value="robot">Robot start</option>
+              <option value="erase">Erase</option>
+            </select></label
+          >
+        </div>
+        <div class="row">
+          <button id="bgen">New map</button
+          ><button id="bgo">Start mission</button
+          ><button class="alt" id="bpause">Pause</button
+          ><button class="alt" id="breset">Reset</button
+          ><button class="alt" id="bcmp">Compare planners</button>
+        </div>
+        <div class="two">
+          <canvas id="cv"></canvas>
+          <div>
+            <div class="pan" id="stats"></div>
+            <div id="cmp"></div>
+            <pre id="log"></pre>
+          </div>
+        </div>
+        <p>
+          Blue: base. Teal: robot (ring = sensor range). Red: survivors
+          (simulated). Finished missions are added to the Missions page
+          automatically.
+        </p>
+      </section>
+
+      <section class="pg" id="prep">
+        <h2>Disaster-specific preparedness</h2>
+        <select id="pSel"></select>
+        <div id="pImg" style="margin-top: 10px"></div>
+        <div class="pan" id="pOut"></div>
+      </section>
+      <section class="pg" id="aid">
+        <h2>Disaster first aid</h2>
+        <div class="warn">
+          Basic guidance only. For serious injuries call 112 or 108 (ambulance)
+          and take a certified first-aid course.
+        </div>
+        <div class="grid" id="aidG"></div>
+      </section>
+      <section class="pg" id="kit">
+        <h2>First aid kit essentials</h2>
+        <div class="pan" id="kitL"></div>
+        <div class="pan"><b id="kitC"></b></div>
+      </section>
+      <section class="pg" id="robot">
+        <h2>Real robot control</h2>
+        <p>
+          Enter your robot's address to connect. Use the buttons or arrow keys
+          to drive it, watch its distance sensor and battery, and press STOP at
+          any time. Test indoors only.
+        </p>
+        <div class="row">
+          <input
+            id="rip"
+            placeholder="Robot address e.g. 192.168.1.50"
+          /><button id="rcon">Connect</button><b id="rst">Not connected</b>
+        </div>
+        <div class="pan" id="rtel">No telemetry</div>
+        <div class="rb">
+          <div><button data-d="F">Forward</button></div>
+          <div>
+            <button data-d="L">Left</button
+            ><button class="red" id="estop">STOP</button
+            ><button data-d="R">Right</button>
+          </div>
+          <div><button data-d="B">Back</button></div>
+        </div>
+      </section>
+      <section class="pg" id="tech">
+        <h2>Next-generation rescue technologies</h2>
+        <p>
+          Tools and strategies modern rescue teams use to find people, reach
+          them and keep them alive. Photos and descriptions load live from
+          Wikipedia.
+        </p>
+        <div class="grid" id="techG"></div>
+      </section>
+      <section class="pg" id="rep">
+        <h2>Reports and data</h2>
+        <div class="pan">
+          <p>
+            Download an incident and rescue summary, export all records, or
+            restore the sample data.
+          </p>
+          <div class="row">
+            <button id="rSum">Download summary report</button
+            ><button class="alt" id="rJson">Export all data</button
+            ><button class="red" id="rReset">Restore sample data</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+      const $ = (i) => document.getElementById(i),
+        esc = (s) =>
+          String(s ?? "").replace(
+            /[&<>"']/g,
+            (c) => "&#" + c.charCodeAt(0) + ";",
+          );
+      const ls = (k, d) => {
+          try {
+            return JSON.parse(localStorage.getItem(k)) || d;
+          } catch (e) {
+            return d;
+          }
+        },
+        sv_ = (k, v) => {
+          try {
+            localStorage.setItem(k, JSON.stringify(v));
+          } catch (e) {}
+        };
+      const CATS = [
+          "Earthquake",
+          "Flood",
+          "Fire",
+          "Cyclone / storm",
+          "Landslide",
+          "Building collapse",
+          "Industrial accident",
+        ],
+        IST = [
+          "New",
+          "Under review",
+          "Assigned",
+          "In progress",
+          "Resolved",
+          "Closed",
+        ];
+      /* ---------- data ---------- */
+      const SEED = {
+        inc: [
+          {
+            title: "Building collapse, Zone A",
+            cat: "Building collapse",
+            sev: "Critical",
+            lat: 12.9716,
+            lng: 77.5946,
+            status: "Under review",
+          },
+          {
+            title: "Flooded underpass",
+            cat: "Flood",
+            sev: "Warning",
+            lat: 12.93,
+            lng: 77.62,
+            status: "New",
+          },
+          {
+            title: "Warehouse fire",
+            cat: "Fire",
+            sev: "Critical",
+            lat: 13.01,
+            lng: 77.55,
+            status: "In progress",
+          },
+        ],
+        rob: [
+          {
+            name: "Rescuer-1",
+            type: "Ground robot",
+            status: "Online",
+            battery: 86,
+            lat: 12.972,
+            lng: 77.595,
+          },
+          {
+            name: "Skywatch-2",
+            type: "Drone",
+            status: "Deployed",
+            battery: 64,
+            lat: 13.008,
+            lng: 77.552,
+          },
+          {
+            name: "Crawler-3",
+            type: "Snake robot",
+            status: "Charging",
+            battery: 31,
+            lat: 12.96,
+            lng: 77.58,
+          },
+        ],
+        sur: [
+          {
+            name: "Survivor S-01",
+            status: "Located",
+            triage: "Immediate",
+            lat: 12.9718,
+            lng: 77.5949,
+          },
+          {
+            name: "Survivor S-02",
+            status: "Being rescued",
+            triage: "Delayed",
+            lat: 13.0085,
+            lng: 77.5525,
+          },
+        ],
+        mis: [
+          {
+            name: "Search Zone A",
+            robot: "Rescuer-1",
+            incident: "Building collapse, Zone A",
+            status: "Active",
+            notes: "Thermal sweep of ground floor",
+          },
+          {
+            name: "Fire perimeter scan",
+            robot: "Skywatch-2",
+            incident: "Warehouse fire",
+            status: "Active",
+            notes: "Aerial survey",
+          },
+        ],
+        tem: [
+          {
+            name: "Alpha Team",
+            size: 6,
+            status: "Deployed",
+            specialty: "Structural collapse",
+          },
+          {
+            name: "Bravo Team",
+            size: 5,
+            status: "Available",
+            specialty: "Water rescue",
+          },
+          {
+            name: "Medic Unit 1",
+            size: 3,
+            status: "Available",
+            specialty: "Trauma care",
+          },
+        ],
+        res: [
+          {
+            item: "Hydraulic rescue tools",
+            qty: 4,
+            location: "Depot 1",
+            status: "Ready",
+          },
+          { item: "Stretchers", qty: 12, location: "Depot 1", status: "Ready" },
+          { item: "Rescue boats", qty: 2, location: "Depot 2", status: "Low" },
+          {
+            item: "Oxygen cylinders",
+            qty: 0,
+            location: "Depot 2",
+            status: "Out",
+          },
+        ],
+        she: [
+          {
+            name: "City Community Hall",
+            capacity: 300,
+            occupied: 120,
+            lat: 12.95,
+            lng: 77.6,
+            status: "Open",
+          },
+          {
+            name: "Govt School Shelter",
+            capacity: 150,
+            occupied: 150,
+            lat: 12.99,
+            lng: 77.57,
+            status: "Full",
+          },
+        ],
+        con: [
+          { name: "National emergency number", number: "112" },
+          { name: "Police", number: "100" },
+          { name: "Fire", number: "101" },
+          { name: "Ambulance", number: "102 / 108" },
+          { name: "Disaster management helpline (NDMA)", number: "1078" },
+        ],
+        msgs: [],
+        act: [],
+      };
+      let D = ls("rcc", null) || JSON.parse(JSON.stringify(SEED)),
+        PK = [12.9716, 77.5946];
+      const save = () => sv_("rcc", D);
+      function act(m) {
+        D.act.unshift(new Date().toLocaleTimeString() + "  " + m);
+        D.act = D.act.slice(0, 30);
+        save();
+      }
+      /* ---------- generic management pages ---------- */
+      const CF = {
+        inc: {
+          t: "Emergency alerts: create and manage",
+          f: [
+            ["title", "Title"],
+            ["cat", "Category", "s", CATS],
+            ["sev", "Severity", "s", ["Informational", "Warning", "Critical"]],
+            ["lat", "Latitude", "n"],
+            ["lng", "Longitude", "n"],
+            ["status", "Status", "s", IST],
+          ],
+          st: "status",
+          cap: 1,
+          b: "Create alert",
+        },
+        rob: {
+          t: "Robot fleet",
+          f: [
+            ["name", "Robot"],
+            [
+              "type",
+              "Type",
+              "s",
+              ["Ground robot", "Drone", "Snake robot", "Boat robot"],
+            ],
+            [
+              "status",
+              "Status",
+              "s",
+              ["Online", "Deployed", "Charging", "Offline"],
+            ],
+            ["battery", "Battery %", "n"],
+            ["lat", "Latitude", "n"],
+            ["lng", "Longitude", "n"],
+          ],
+          st: "status",
+          b: "Add robot",
+        },
+        sur: {
+          t: "Survivor tracking",
+          f: [
+            ["name", "Survivor"],
+            [
+              "status",
+              "Status",
+              "s",
+              ["Located", "Being rescued", "Rescued", "Needs medical care"],
+            ],
+            ["triage", "Triage", "s", ["Immediate", "Delayed", "Minor"]],
+            ["lat", "Latitude", "n"],
+            ["lng", "Longitude", "n"],
+          ],
+          st: "status",
+          b: "Record survivor",
+        },
+        mis: {
+          t: "Rescue missions",
+          f: [
+            ["name", "Mission"],
+            ["robot", "Robot"],
+            ["incident", "Incident"],
+            [
+              "status",
+              "Status",
+              "s",
+              ["Planned", "Active", "Completed", "Aborted"],
+            ],
+            ["notes", "Notes"],
+          ],
+          st: "status",
+          b: "Plan mission",
+        },
+        tem: {
+          t: "Rescue teams",
+          f: [
+            ["name", "Team"],
+            ["size", "Members", "n"],
+            ["status", "Status", "s", ["Available", "Deployed", "Resting"]],
+            ["specialty", "Specialty"],
+          ],
+          st: "status",
+          b: "Add team",
+        },
+        res: {
+          t: "Equipment and supplies",
+          f: [
+            ["item", "Item"],
+            ["qty", "Quantity", "n"],
+            ["location", "Location"],
+            ["status", "Status", "s", ["Ready", "Low", "Out"]],
+          ],
+          st: "status",
+          b: "Add item",
+        },
+        she: {
+          t: "Shelters",
+          f: [
+            ["name", "Shelter"],
+            ["capacity", "Capacity", "n"],
+            ["occupied", "Occupied", "n"],
+            ["lat", "Latitude", "n"],
+            ["lng", "Longitude", "n"],
+            ["status", "Status", "s", ["Open", "Full", "Closed"]],
+          ],
+          st: "status",
+          b: "Add shelter",
+        },
+        con: {
+          t: "Emergency contacts",
+          f: [
+            ["name", "Service"],
+            ["number", "Number"],
+          ],
+          b: "Save contact",
+        },
+        msg: {
+          k: "msgs",
+          t: "Contact us: send us a message",
+          f: [
+            ["name", "Your name"],
+            ["email", "Email"],
+            ["subject", "Subject"],
+            ["message", "Message"],
+          ],
+          b: "Send message",
+        },
+      };
+      function crud(k) {
+        const c = CF[k],
+          dk = c.k || k;
+        let el = $(k);
+        el.innerHTML = `<h2>${c.t}</h2>${k == "msg" ? "<p>For feedback and questions. This is not an emergency channel.</p>" : ""}<div class="pan"><div class="row">${c.f.map((f, i) => (f[2] == "s" ? `<label>${f[1]}<br><select id="${k}${i}">${f[3].map((o) => `<option>${o}</option>`).join("")}</select></label>` : `<label>${f[1]}<br><input id="${k}${i}" ${f[2] == "n" ? 'type="number" step="any"' : ""} value="${f[0] == "lat" ? PK[0] : f[0] == "lng" ? PK[1] : ""}"></label>`)).join("")}<button onclick="add('${k}')">${c.b}</button></div></div>
+<div style="overflow:auto"><table><tr>${c.f.map((f) => `<th>${f[1]}</th>`).join("")}<th></th></tr>${D[dk].map((r, j) => `<tr>${c.f.map((f) => `<td>${f[0] == "sev" || f[0] == "triage" ? `<span class="tag ${r[f[0]]}">${r[f[0]]}</span>` : esc(r[f[0]])}</td>`).join("")}<td style="white-space:nowrap">${c.st ? `<button class="alt" onclick="nxt('${k}',${j})">Next status</button> ` : ""}<button class="red" onclick="del('${k}',${j})">Delete</button></td></tr>`).join("")}</table></div>`;
+      }
+      window.add = (k) => {
+        const c = CF[k],
+          o = {};
+        c.f.forEach((f, i) => {
+          const v = $(k + i).value.trim();
+          o[f[0]] = f[2] == "n" ? parseFloat(v) || 0 : v;
+        });
+        if (!o[c.f[0][0]]) {
+          alert("Fill in the first field.");
+          return;
+        }
+        D[c.k || k].unshift(o);
+        act(c.t.split(":")[0] + ": " + o[c.f[0][0]]);
+        save();
+        crud(k);
+      };
+      window.del = (k, j) => {
+        D[CF[k].k || k].splice(j, 1);
+        save();
+        crud(k);
+      };
+      window.nxt = (k, j) => {
+        const c = CF[k],
+          f = c.f.find((x) => x[0] == c.st),
+          r = D[k][j],
+          o = f[3],
+          i = o.indexOf(r[c.st]);
+        r[c.st] = o[c.cap ? Math.min(i + 1, o.length - 1) : (i + 1) % o.length];
+        act(r[c.f[0][0]] + " is now " + r[c.st]);
+        save();
+        crud(k);
+      };
+      /* ---------- nav ---------- */
+      const IC = {
+        dash: "📊",
+        home: "🏠",
+        mapp: "🗺️",
+        trk: "📍",
+        sim: "🤖",
+        inc: "🚨",
+        mis: "🎯",
+        rob: "🦾",
+        sur: "🆘",
+        tem: "👷",
+        res: "🧰",
+        she: "⛺",
+        prep: "📋",
+        aid: "⛑️",
+        kit: "🩹",
+        con: "☎️",
+        msg: "✉️",
+        robot: "🕹️",
+        tech: "🛰️",
+        rep: "📄",
+      };
+      const NAV = [
+        ["dash", "Dashboard"],
+        ["home", "Home"],
+        ["mapp", "Live Map"],
+        ["trk", "Route Tracker"],
+        ["sim", "Simulator"],
+        ["inc", "Emergency Alerts"],
+        ["mis", "Missions"],
+        ["rob", "Robot Fleet"],
+        ["sur", "Survivors"],
+        ["tem", "Rescue Teams"],
+        ["res", "Resources"],
+        ["she", "Shelters"],
+        ["prep", "Preparedness"],
+        ["aid", "First Aid"],
+        ["kit", "First Aid Kit"],
+        ["con", "Emergency Contacts"],
+        ["msg", "Contact Us"],
+        ["robot", "Real Robot"],
+        ["tech", "Technologies"],
+        ["rep", "Reports"],
+      ];
+      NAV.forEach(([id, l]) => {
+        if (!$(id)) {
+          const s = document.createElement("section");
+          s.className = "pg";
+          s.id = id;
+          document.querySelector("main").appendChild(s);
+        }
+        const b = document.createElement("button");
+        b.textContent = (IC[id] || "") + " " + l;
+        b.id = "n_" + id;
+        b.onclick = () => show(id);
+        $("nav").appendChild(b);
+      });
+      const R = {
+        trk: () => trackerR(),
+        home: () => loadHome(),
+        dash: () => dash(),
+        mapp: () => initMap(),
+        kit: () => kitR(),
+        tech: () => loadTech(),
+      };
+      Object.keys(CF).forEach((k) => (R[k] = () => crud(k)));
+      function show(id) {
+        document
+          .querySelectorAll(".pg")
+          .forEach((s) => s.classList.toggle("on", s.id == id));
+        document
+          .querySelectorAll("aside button")
+          .forEach((b) => b.classList.toggle("on", b.id == "n_" + id));
+        R[id] && R[id]();
+        scrollTo(0, 0);
+      }
+      /* ---------- dashboard ---------- */
+      function dash() {
+        const o = D.inc.filter(
+            (i) => !["Resolved", "Closed"].includes(i.status),
+          ),
+          k = (l, v, c) =>
+            `<div class="kpi" style="border-color:${c}"><b>${v}</b><span>${l}</span></div>`,
+          cats = {};
+        D.inc.forEach((i) => (cats[i.cat] = (cats[i.cat] || 0) + 1));
+        const mx = Math.max(1, ...Object.values(cats)),
+          free = D.she.reduce(
+            (a, s) => a + Math.max(0, s.capacity - s.occupied),
+            0,
+          );
+        $("dash").innerHTML =
+          `<div class="rhero"><div><h2>Mission control</h2><p>One live view of every incident, robot, team and shelter. Find the nearest ready robot, plan its route to the disaster site, and track it on the way.</p><div class="row"><button onclick="show('trk')">Plan a route</button><button onclick="show('sim')">Run a simulation</button><button onclick="show('mapp')">Open live map</button><button onclick="voice()">Voice command</button><button onclick="show('mapp');deployAll()">Deploy ready robots</button></div></div><div id="robImg" style="text-align:center">${RSVG}</div></div><div class="kg">${k("Active incidents", o.length, "#e5483b")}${k("Critical", o.filter((i) => i.sev == "Critical").length, "#e5483b")}${k("Robots ready", D.rob.filter((r) => r.status == "Online").length + " / " + D.rob.length, "#27c4d6")}${k("Survivors located", D.sur.length, "#f2b01e")}${k("Rescued", D.sur.filter((s) => s.status == "Rescued").length, "#33b86c")}${k("Active missions", D.mis.filter((m) => m.status == "Active").length, "#27c4d6")}${k("Teams available", D.tem.filter((t) => t.status == "Available").length, "#33b86c")}${k("Shelter beds free", free, "#a78bfa")}</div>
+<div class="d3"><div class="pan"><b>Incidents by category</b>${
+            Object.entries(cats)
+              .map(
+                ([c, n]) =>
+                  `<div>${esc(c)} (${n})<div class="bar"><i style="width:${(n / mx) * 100}%"></i></div></div>`,
+              )
+              .join("") || "<p>No incidents.</p>"
+          }</div>
+<div class="pan"><b>Robot batteries</b>${D.rob.map((r) => `<div>${esc(r.name)}: ${r.battery}% (${esc(r.status)})<div class="bar"><i style="width:${Math.min(100, r.battery)}%;background:${r.battery < 35 ? "#e5483b" : "#27c4d6"}"></i></div></div>`).join("")}</div>
+<div class="pan"><b>Recent activity</b><pre>${esc(D.act.slice(0, 8).join("\n") || "No activity yet.")}</pre></div><div class="pan" style="grid-column:1/-1"><b>Smart dispatch suggestions</b>${dsp()}</div><div class="pan"><b>Live weather risk</b><div id="wx">Loading...</div></div></div><h3>Meet the robots</h3><div class="grid" id="botG"></div>`;
+        dashInit();
+      }
+      /* ---------- map ---------- */
+      let map,
+        LY = {};
+      function initMap() {
+        if (map) {
+          map.invalidateSize();
+          drawMap();
+          return;
+        }
+        if (typeof L == "undefined") {
+          $("map").textContent =
+            "Map did not load. Check your internet connection.";
+          return;
+        }
+        map = L.map("map").setView([12.9716, 77.5946], 11);
+        [
+          "Risk zones",
+          "Incidents",
+          "Robots",
+          "Survivors",
+          "Shelters",
+          "Real earthquakes",
+          "Hospitals",
+        ].forEach((n, i) => (LY[n] = L.layerGroup().addTo(map)));
+        L.control.layers(baseMaps(map), LY, { collapsed: true }).addTo(map);
+        setTimeout(() => map.invalidateSize(), 300);
+        map.on("click", (e) => {
+          PK = [+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)];
+          $("mst").textContent = "Next form location set: " + PK.join(", ");
+        });
+        drawMap();
+      }
+      function drawMap() {
+        if (!map) return;
+        ["Risk zones", "Incidents", "Robots", "Survivors", "Shelters"].forEach(
+          (n) => LY[n].clearLayers(),
+        );
+        const SC = {
+          Informational: "#2563eb",
+          Warning: "#f2b01e",
+          Critical: "#e5483b",
+        };
+        const m = (l, a, c, r, t) =>
+          L.circleMarker([a.lat, a.lng], {
+            radius: r,
+            color: c,
+            fillOpacity: 0.75,
+          })
+            .bindPopup(t)
+            .addTo(LY[l]);
+        D.inc.forEach((a) =>
+          L.circle([a.lat, a.lng], {
+            radius: { Critical: 700, Warning: 400, Informational: 200 }[a.sev],
+            color: SC[a.sev],
+            weight: 1,
+            fillOpacity: 0.15,
+          })
+            .bindPopup("Risk zone: keep civilians out")
+            .addTo(LY["Risk zones"]),
+        );
+        D.inc.forEach((a) =>
+          m(
+            "Incidents",
+            a,
+            SC[a.sev],
+            11,
+            `<b>${esc(a.title)}</b><br>${a.sev} | ${a.status}<br>${esc(a.cat)}`,
+          ),
+        );
+        D.rob.forEach((a) =>
+          L.marker([a.lat, a.lng], {
+            icon: L.divIcon({
+              className: "",
+              html: '<div class="rm">🤖</div>',
+              iconSize: [34, 34],
+              iconAnchor: [17, 17],
+            }),
+          })
+            .bindPopup(
+              `<b>${esc(a.name)}</b><br>${esc(a.type)} | ${a.status}<br>Battery ${a.battery}%`,
+            )
+            .addTo(LY.Robots),
+        );
+        MV.forEach((o) =>
+          L.polyline(
+            [
+              [o.r.lat, o.r.lng],
+              [o.t.lat, o.t.lng],
+            ],
+            { color: "#22d3ee", dashArray: "6 8", weight: 2 },
+          ).addTo(LY.Robots),
+        );
+        D.sur.forEach((a) =>
+          m(
+            "Survivors",
+            a,
+            a.status == "Rescued" ? "#33b86c" : "#ff6b9a",
+            7,
+            `<b>${esc(a.name)}</b><br>${a.status} | ${a.triage}`,
+          ),
+        );
+        D.she.forEach((a) =>
+          m(
+            "Shelters",
+            a,
+            "#a78bfa",
+            9,
+            `<b>${esc(a.name)}</b><br>${a.occupied}/${a.capacity} occupied | ${a.status}`,
+          ),
+        );
+      }
+      $("bq").onclick = () => {
+        if (!map) return;
+        $("mst").textContent = "Loading...";
+        fetch(
+          "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson",
+        )
+          .then((r) => r.json())
+          .then((j) => {
+            LY["Real earthquakes"].clearLayers();
+            j.features.forEach((f) => {
+              const [x, y] = f.geometry.coordinates;
+              L.circleMarker([y, x], {
+                radius: 3 + f.properties.mag * 1.5,
+                color: "#c084fc",
+                fillOpacity: 0.5,
+              })
+                .bindPopup(
+                  `M${f.properties.mag}: ${esc(f.properties.place)}<br>Real recorded earthquake`,
+                )
+                .addTo(LY["Real earthquakes"]);
+            });
+            $("mst").textContent =
+              j.features.length +
+              " real earthquakes (M2.5+) in the last 24 hours.";
+          })
+          .catch(() => ($("mst").textContent = "Could not load earthquakes."));
+      };
+      $("bh").onclick = () => {
+        if (!map) return;
+        const c = map.getCenter();
+        $("mst").textContent = "Searching...";
+        fetch(
+          "https://overpass-api.de/api/interpreter?data=" +
+            encodeURIComponent(
+              `[out:json][timeout:20];node[amenity=hospital](around:6000,${c.lat},${c.lng});out 40;`,
+            ),
+        )
+          .then((r) => r.json())
+          .then((j) => {
+            LY.Hospitals.clearLayers();
+            j.elements.forEach((e) =>
+              L.circleMarker([e.lat, e.lon], {
+                radius: 7,
+                color: "#33b86c",
+                fillOpacity: 0.8,
+              })
+                .bindPopup(esc((e.tags && e.tags.name) || "Hospital"))
+                .addTo(LY.Hospitals),
+            );
+            $("mst").textContent =
+              j.elements.length +
+              " hospitals within 6 km (verify before relying on them).";
+          })
+          .catch(
+            () =>
+              ($("mst").textContent =
+                "Hospital search failed. Try again later."),
+          );
+      };
+      /* ---------- simulator ---------- */
+      const W = 32,
+        H = 20,
+        C = 22,
+        DR = [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ],
+        base = [1, 1],
+        cv = $("cv"),
+        cx = cv.getContext("2d");
+      cv.width = W * C;
+      cv.height = H * C;
+      let g,
+        g0,
+        v0,
+        vics,
+        rob,
+        rs = [1, 1],
+        S,
+        path = [],
+        tgt = null,
+        tmr = null,
+        seed = 7,
+        logs = [];
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647,
+        hz = () => ($("risk").checked ? 60 : 10);
+      function blob(t, n, len) {
+        for (let i = 0; i < n; i++) {
+          let x = (rnd() * W) | 0,
+            y = (rnd() * H) | 0;
+          for (let j = 0; j < len; j++) {
+            g[y][x] = t;
+            const d = DR[(rnd() * 4) | 0];
+            x = Math.min(W - 1, Math.max(0, x + d[0]));
+            y = Math.min(H - 1, Math.max(0, y + d[1]));
+          }
+        }
+      }
+      function gen() {
+        seed = +$("seed").value || 1;
+        g = Array.from({ length: H }, () => Array(W).fill(0));
+        const s = $("scn").value;
+        if (s == "quake") {
+          blob(1, 16, 8);
+          blob(3, 2, 5);
+        } else if (s == "flood") {
+          blob(2, 9, 24);
+          blob(1, 6, 5);
+        } else if (s == "fire") {
+          blob(3, 8, 14);
+          blob(1, 6, 6);
+        } else {
+          blob(1, 24, 7);
+          blob(3, 3, 6);
+        }
+        for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) g[y][x] = 0;
+        vics = [];
+        while (vics.length < 5) {
+          const x = (rnd() * W) | 0,
+            y = (rnd() * H) | 0;
+          if (
+            g[y][x] == 0 &&
+            x + y > 6 &&
+            !vics.some((v) => v.x == x && v.y == y)
+          )
+            vics.push({ x, y, done: false, det: 0 });
+        }
+        rs = [...base];
+        snap();
+        reset();
+      }
+      function snap() {
+        g0 = g.map((r) => r.slice());
+        v0 = vics.map((v) => ({ x: v.x, y: v.y, done: false, det: 0 }));
+      }
+      function reset() {
+        clearInterval(tmr);
+        g = g0.map((r) => r.slice());
+        vics = v0.map((v) => ({ ...v }));
+        rob = [...rs];
+        path = [];
+        tgt = null;
+        logs = [];
+        S = {
+          bat: 100,
+          res: 0,
+          dist: 0,
+          rep: 0,
+          nodes: 0,
+          haz: 0,
+          steps: 0,
+          state: "Idle",
+          done: false,
+        };
+        draw();
+        stats();
+        $("log").textContent = "";
+      }
+      function log(m) {
+        logs.push(`[${S.steps}] ${m}`);
+        $("log").textContent = logs.slice(-12).join("\n");
+      }
+      function solve(a, s, t) {
+        const K = (x, y) => y * W + x,
+          gs = {},
+          pv = {},
+          cl = {};
+        let n = 0;
+        const cs = (c) =>
+            a == "bfs" || a == "dfs" ? 1 : c == 2 ? 3 : c == 3 ? hz() : 1,
+          hh = (o) => Math.abs((o % W) - t[0]) + Math.abs(((o / W) | 0) - t[1]);
+        const f = (o) => (a == "astar" ? gs[o] + hh(o) : gs[o]),
+          S0 = K(s[0], s[1]),
+          T = K(t[0], t[1]);
+        gs[S0] = 0;
+        let op = [S0];
+        while (op.length) {
+          let i = 0;
+          if (a == "dfs") i = op.length - 1;
+          else if (a != "bfs") {
+            for (let j = 1; j < op.length; j++) if (f(op[j]) < f(op[i])) i = j;
+          }
+          const u = op.splice(i, 1)[0];
+          if (cl[u]) continue;
+          cl[u] = 1;
+          n++;
+          if (u == T) {
+            const p = [];
+            for (let v = T; v !== undefined; v = pv[v])
+              p.push([v % W, (v / W) | 0]);
+            return { p: p.reverse(), n };
+          }
+          const ux = u % W,
+            uy = (u / W) | 0;
+          for (const [dx, dy] of DR) {
+            const x = ux + dx,
+              y = uy + dy;
+            if (x < 0 || y < 0 || x >= W || y >= H || g[y][x] == 1) continue;
+            const v = K(x, y);
+            if (cl[v]) continue;
+            const ng = gs[u] + cs(g[y][x]);
+            if (a == "bfs" || a == "dfs") {
+              if (gs[v] === undefined) {
+                gs[v] = ng;
+                pv[v] = u;
+                op.push(v);
+              }
+            } else if (gs[v] === undefined || ng < gs[v]) {
+              gs[v] = ng;
+              pv[v] = u;
+              op.push(v);
+            }
+          }
+        }
+        return { p: null, n };
+      }
+      const sv = (a, s, t) => {
+          const r = solve(a, s, t);
+          S.nodes += r.n;
+          return r;
+        },
+        atBase = () => rob[0] == base[0] && rob[1] == base[1];
+      function finish(m) {
+        clearInterval(tmr);
+        S.done = true;
+        S.state = m;
+        log(m);
+        D.mis.unshift({
+          name: "Simulation: " + $("scn").value,
+          robot: "Sim robot",
+          incident: "Simulated " + $("scn").value,
+          status: m.startsWith("Mission") ? "Completed" : "Aborted",
+          notes: `${S.res}/${vics.length} survivors reached, ${S.dist} steps, ${S.rep} replans`,
+        });
+        act("Simulated mission finished: " + m);
+        save();
+        draw();
+        stats();
+      }
+      function plan() {
+        const a = $("alg").value,
+          left = vics.filter((v) => !v.done);
+        if (atBase() && S.bat < 100 && left.length) {
+          S.bat = 100;
+          log("Recharged at base");
+        }
+        const home = sv(a, rob, base);
+        if (!left.length) {
+          if (atBase()) {
+            finish("Mission complete");
+            return;
+          }
+          tgt = "base";
+          path = home.p ? home.p.slice(1) : [];
+          if (!home.p) finish("FAILED: no route to base");
+          return;
+        }
+        let best = null;
+        for (const v of left) {
+          const r = sv(a, rob, [v.x, v.y]);
+          if (r.p && (!best || r.p.length < best.r.p.length)) best = { v, r };
+        }
+        if (!best) {
+          finish("Stopped: no reachable survivors left");
+          return;
+        }
+        const back = solve(a, [best.v.x, best.v.y], base),
+          need = (best.r.p.length + (back.p ? back.p.length : 0)) * 0.6;
+        if (need > S.bat && home.p && !atBase()) {
+          tgt = "base";
+          path = home.p.slice(1);
+          log("Battery low, returning to base");
+          return;
+        }
+        if (need > 100) {
+          finish("Stopped: remaining targets exceed battery range");
+          return;
+        }
+        tgt = best.v;
+        path = best.r.p.slice(1);
+        log(
+          `Target: survivor at (${best.v.x},${best.v.y}), ${best.r.p.length - 1} steps`,
+        );
+      }
+      function step() {
+        if (S.state != "Running") return;
+        S.steps++;
+        if ($("aft").checked && rnd() < 0.015) {
+          const x = (rnd() * W) | 0,
+            y = (rnd() * H) | 0;
+          if (
+            g[y][x] != 1 &&
+            !(x == rob[0] && y == rob[1]) &&
+            !(x == base[0] && y == base[1]) &&
+            !vics.some((v) => !v.done && v.x == x && v.y == y)
+          ) {
+            g[y][x] = 1;
+            log(`Aftershock: rubble at (${x},${y})`);
+            if (path.some((p) => p[0] == x && p[1] == y)) {
+              S.rep++;
+              path = [];
+              log("Route blocked, replanning");
+            }
+          }
+        }
+        if (!path.length) {
+          plan();
+          if (S.state != "Running") return;
+        }
+        if (!path.length) {
+          draw();
+          stats();
+          return;
+        }
+        const n = path.shift();
+        if (g[n[1]][n[0]] == 1) {
+          path = [];
+          S.rep++;
+          return;
+        }
+        rob = n;
+        const c = g[n[1]][n[0]];
+        S.dist++;
+        if (c > 1) S.haz++;
+        S.bat -= c > 1 ? 1.2 : 0.5;
+        vics.forEach((v) => {
+          const d = Math.hypot(v.x - rob[0], v.y - rob[1]);
+          v.det = d <= 6 ? Math.max(0.3, 1 - d / 8) : 0;
+        });
+        if (S.bat <= 0) {
+          S.bat = 0;
+          finish("FAILED: battery depleted");
+          return;
+        }
+        if (!path.length) {
+          if (tgt && tgt != "base") {
+            tgt.done = true;
+            S.res++;
+            log(
+              `Survivor located at (${tgt.x},${tgt.y}), confidence ${(tgt.det * 100) | 0}% (simulated)`,
+            );
+          }
+          tgt = null;
+        }
+        draw();
+        stats();
+      }
+      function draw() {
+        cx.clearRect(0, 0, cv.width, cv.height);
+        const col = ["#f4f6f3", "#4a4f55", "#6fb3e0", "#e8743b"];
+        for (let y = 0; y < H; y++)
+          for (let x = 0; x < W; x++) {
+            cx.fillStyle = col[g[y][x]];
+            cx.fillRect(x * C, y * C, C - 1, C - 1);
+          }
+        if (path.length) {
+          cx.strokeStyle = "#0b8f9c";
+          cx.lineWidth = 3;
+          cx.beginPath();
+          cx.moveTo(rob[0] * C + C / 2, rob[1] * C + C / 2);
+          path.forEach((p) => cx.lineTo(p[0] * C + C / 2, p[1] * C + C / 2));
+          cx.stroke();
+        }
+        cx.fillStyle = "#1d4ed8";
+        cx.fillRect(base[0] * C + 2, base[1] * C + 2, C - 5, C - 5);
+        vics.forEach((v) => {
+          cx.fillStyle = v.done ? "#2e9e5b" : "#c0392b";
+          cx.beginPath();
+          cx.arc(v.x * C + C / 2, v.y * C + C / 2, C / 3, 0, 7);
+          cx.fill();
+          if (v.det && !v.done) {
+            cx.strokeStyle = "#c0392b";
+            cx.lineWidth = 2;
+            cx.beginPath();
+            cx.arc(v.x * C + C / 2, v.y * C + C / 2, C / 2 + 2, 0, 7);
+            cx.stroke();
+          }
+        });
+        cx.strokeStyle = "rgba(11,143,156,.5)";
+        cx.lineWidth = 1;
+        cx.beginPath();
+        cx.arc(rob[0] * C + C / 2, rob[1] * C + C / 2, 6 * C, 0, 7);
+        cx.stroke();
+        cx.fillStyle = "#0b8f9c";
+        cx.fillRect(rob[0] * C + 3, rob[1] * C + 3, C - 7, C - 7);
+      }
+      function stats() {
+        $("stats").innerHTML =
+          `<b>${esc(S.state)}</b><div class="bar"><i style="width:${Math.max(0, S.bat)}%"></i></div>Battery ${S.bat.toFixed(0)}%<br>Survivors reached: ${S.res}/${vics.length}<br>Steps: ${S.dist} | Hazard cells crossed: ${S.haz}<br>Nodes expanded: ${S.nodes} | Replans: ${S.rep}`;
+      }
+      function cmp() {
+        const left = vics.filter((v) => !v.done);
+        if (!left.length) {
+          $("cmp").innerHTML = '<div class="pan">No survivors left.</div>';
+          return;
+        }
+        const t = [left[0].x, left[0].y];
+        let h = `<div class="pan"><b>Route to survivor at (${t})</b><table><tr><th>Planner</th><th>Cost</th><th>Steps</th><th>Nodes</th><th>Hazards</th><th>ms</th></tr>`;
+        for (const a of ["astar", "dijkstra", "bfs", "dfs"]) {
+          const t0 = performance.now(),
+            r = solve(a, rob, t),
+            ms = (performance.now() - t0).toFixed(2);
+          if (!r.p) {
+            h += `<tr><td>${a}</td><td colspan=5>no route</td></tr>`;
+            continue;
+          }
+          let cost = 0,
+            z = 0;
+          r.p.slice(1).forEach((p) => {
+            const c = g[p[1]][p[0]];
+            cost += c == 2 ? 3 : c == 3 ? hz() : 1;
+            if (c > 1) z++;
+          });
+          h += `<tr><td>${a}</td><td>${cost}</td><td>${r.p.length - 1}</td><td>${r.n}</td><td>${z}</td><td>${ms}</td></tr>`;
+        }
+        $("cmp").innerHTML = h + "</table></div>";
+      }
+      $("bgo").onclick = () => {
+        if (S.done || S.state == "Running") return;
+        S.state = "Running";
+        clearInterval(tmr);
+        tmr = setInterval(step, Math.max(30, 330 - $("spd").value * 30));
+      };
+      $("bpause").onclick = () => {
+        if (S.state == "Running") {
+          clearInterval(tmr);
+          S.state = "Paused";
+          stats();
+        }
+      };
+      $("breset").onclick = reset;
+      $("bgen").onclick = () => {
+        $("seed").value = (1 + Math.random() * 998) | 0;
+        gen();
+      };
+      $("scn").onchange = gen;
+      $("bcmp").onclick = cmp;
+      let pd = false;
+      cv.onpointerdown = (e) => {
+        pd = true;
+        paint(e);
+      };
+      cv.onpointermove = (e) => {
+        if (pd) paint(e);
+      };
+      addEventListener("pointerup", () => (pd = false));
+      function paint(e) {
+        if (S.state != "Idle") return;
+        const r = cv.getBoundingClientRect(),
+          x = (((e.clientX - r.left) * W) / r.width) | 0,
+          y = (((e.clientY - r.top) * H) / r.height) | 0;
+        if (
+          x < 0 ||
+          y < 0 ||
+          x >= W ||
+          y >= H ||
+          (x == base[0] && y == base[1])
+        )
+          return;
+        const t = $("tool").value;
+        if (t == "victim") {
+          if (g[y][x] != 1 && !vics.some((v) => v.x == x && v.y == y))
+            vics.push({ x, y, done: false, det: 0 });
+        } else if (t == "robot") {
+          if (g[y][x] != 1) {
+            rs = [x, y];
+            rob = [x, y];
+          }
+        } else {
+          const m = { wall: 1, water: 2, fire: 3, erase: 0 }[t];
+          g[y][x] = m;
+          vics = vics.filter(
+            (v) => !(v.x == x && v.y == y && (m == 1 || t == "erase")),
+          );
+        }
+        snap();
+        draw();
+        stats();
+      }
+      /* ---------- route tracker, dispatch ---------- */
+      const RSVG = `<div class="bot" id="bot" onclick="botTalk()" title="Click the robot"><svg viewBox="0 0 240 260"><g class="ant"><line x1="120" y1="22" x2="120" y2="46" stroke="#111" stroke-width="5"/><circle cx="120" cy="16" r="9" fill="#ef4444"/></g><rect x="64" y="44" width="112" height="84" rx="26" fill="#f8fafc" stroke="#111" stroke-width="5"/><rect x="78" y="60" width="84" height="52" rx="16" fill="#0b0b0f"/><g class="eye"><circle cx="102" cy="82" r="11" fill="#fff"/><circle class="pp" cx="102" cy="82" r="5" fill="#22d3ee"/></g><g class="eye"><circle cx="138" cy="82" r="11" fill="#fff"/><circle class="pp" cx="138" cy="82" r="5" fill="#22d3ee"/></g><rect id="mouth" x="108" y="100" width="24" height="4" rx="2" fill="#22d3ee"/><rect x="58" y="132" width="124" height="74" rx="20" fill="#f8fafc" stroke="#111" stroke-width="5"/><rect x="84" y="148" width="72" height="36" rx="8" fill="#0b0b0f"/><path class="hb" d="M90 168h12l6-12 8 24 8-16 6 4h16" fill="none" stroke="#34d399" stroke-width="3"/><g class="arm l"><rect x="22" y="136" width="28" height="64" rx="14" fill="#111"/></g><g class="arm r"><rect x="190" y="136" width="28" height="64" rx="14" fill="#111"/></g><rect x="70" y="210" width="40" height="38" rx="10" fill="#111"/><rect x="130" y="210" width="40" height="38" rx="10" fill="#111"/></svg><br><span class="bub" id="bub">Hi! Click me for a status report.</span></div>`;
+      async function robotPhoto() {
+        for (const t of [
+          "Rescue robot",
+          "Snake robot",
+          "Unmanned ground vehicle",
+          "Robot",
+        ]) {
+          const j = await wiki(t),
+            im =
+              j &&
+              (j.originalimage && j.originalimage.width <= 1600
+                ? j.originalimage
+                : j.thumbnail);
+          if (im && $("robImg")) {
+            $("robImg").innerHTML =
+              `<img src="${esc(im.source)}" alt="Rescue robot" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px"><small>${esc(j.title)} (Wikipedia)</small>`;
+            return;
+          }
+        }
+      }
+      const hav = (a, b) => {
+        const t = (x) => (x * Math.PI) / 180,
+          dl = t(b.lat - a.lat),
+          dg = t(b.lng - a.lng),
+          h =
+            Math.sin(dl / 2) ** 2 +
+            Math.cos(t(a.lat)) * Math.cos(t(b.lat)) * Math.sin(dg / 2) ** 2;
+        return 12742 * Math.asin(Math.sqrt(h));
+      };
+      function dsp() {
+        const o = D.inc.filter(
+            (i) => !["Resolved", "Closed"].includes(i.status),
+          ),
+          rs = D.rob.filter((r) => r.status == "Online");
+        if (!o.length || !rs.length)
+          return "<p>No active incidents, or no robots are ready.</p>";
+        return o
+          .map((i) => {
+            const b = rs
+              .map((r) => ({ r, d: hav(r, i) }))
+              .sort((x, y) => x.d - y.d)[0];
+            return `<div style="margin:6px 0"><b>${esc(i.title)}</b> <span class="tag ${i.sev}">${i.sev}</span><br>Send ${esc(b.r.name)}: ${b.d.toFixed(1)} km away, battery ${b.r.battery}% <button class="alt" onclick="dispatch('${b.r.lat},${b.r.lng}','${i.lat},${i.lng}')">Plan route</button></div>`;
+          })
+          .join("");
+      }
+      let TM,
+        TL,
+        TR = null,
+        TT = null,
+        TW = null,
+        PRE = null;
+      window.dispatch = (f, t) => {
+        PRE = [f, t];
+        show("trk");
+      };
+      const opt = (a, v) => `<option value="${esc(v)}">${esc(a)}</option>`,
+        ll = (o) => o.lat + "," + o.lng;
+      async function geo(q) {
+        try {
+          const r = await fetch(
+              "https://photon.komoot.io/api/?limit=1&q=" +
+                encodeURIComponent(q),
+            ),
+            j = await r.json(),
+            f = j.features && j.features[0];
+          if (f) {
+            const p = f.properties;
+            return {
+              lat: f.geometry.coordinates[1],
+              lng: f.geometry.coordinates[0],
+              name: [p.name, p.city || p.county, p.state, p.country]
+                .filter(Boolean)
+                .join(", "),
+            };
+          }
+        } catch (e) {}
+        const r = await fetch(
+            "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+              encodeURIComponent(q),
+          ),
+          j = await r.json();
+        if (!j.length) throw new Error("Place not found: " + q);
+        return { lat: +j[0].lat, lng: +j[0].lon, name: j[0].display_name };
+      }
+      async function pt(sel, addr) {
+        const v = $(sel).value;
+        if (v == "addr") {
+          const q = $(addr).value.trim();
+          if (!q)
+            throw new Error(
+              "Type an address, or choose a place from the list.",
+            );
+          return geo(q);
+        }
+        if (v == "me")
+          return new Promise((ok, no) =>
+            navigator.geolocation
+              ? navigator.geolocation.getCurrentPosition(
+                  (p) =>
+                    ok({
+                      lat: p.coords.latitude,
+                      lng: p.coords.longitude,
+                      name: "My location",
+                    }),
+                  () => no(new Error("Location permission was denied.")),
+                )
+              : no(new Error("Location is not supported here.")),
+          );
+        const [a, b] = v.split(",");
+        return {
+          lat: +a,
+          lng: +b,
+          name: $(sel).selectedOptions[0].text.replace(/^[^:]+: /, ""),
+        };
+      }
+      function stopTrack() {
+        clearInterval(TT);
+        TT = null;
+      }
+      async function findRoute() {
+        const info = $("tinfo");
+        info.textContent = "Finding the route...";
+        try {
+          const a = await pt("tf", "tfa"),
+            b = await pt("tt", "tta"),
+            r = await fetch(
+              `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&steps=true`,
+            ),
+            j = await r.json();
+          if (!j.routes || !j.routes.length)
+            throw new Error("No road route found between these places.");
+          const rt = j.routes[0],
+            pts = rt.geometry.coordinates.map((c) => [c[1], c[0]]);
+          stopTrack();
+          TL.clearLayers();
+          $("tlive").textContent = "";
+          L.polyline(pts, { color: "#22d3ee", weight: 6, opacity: 0.9 }).addTo(
+            TL,
+          );
+          L.circleMarker([a.lat, a.lng], {
+            radius: 9,
+            color: "#34d399",
+            fillOpacity: 1,
+          })
+            .bindPopup("From: " + esc(a.name))
+            .addTo(TL);
+          L.circleMarker([b.lat, b.lng], {
+            radius: 9,
+            color: "#fb4f6b",
+            fillOpacity: 1,
+          })
+            .bindPopup("To: " + esc(b.name))
+            .addTo(TL);
+          TM.fitBounds(pts, { padding: [30, 30] });
+          const cum = [0];
+          for (let i = 1; i < pts.length; i++)
+            cum.push(
+              cum[i - 1] +
+                hav(
+                  { lat: pts[i - 1][0], lng: pts[i - 1][1] },
+                  { lat: pts[i][0], lng: pts[i][1] },
+                ),
+            );
+          TR = { a, b, pts, cum, dist: rt.distance, dur: rt.duration };
+          const st = rt.legs[0].steps
+            .slice(0, 12)
+            .map((x) => {
+              const m = x.maneuver,
+                w =
+                  m.type == "arrive"
+                    ? "Arrive"
+                    : m.type == "depart"
+                      ? "Start"
+                      : (m.type == "turn" ? "Turn" : "Continue") +
+                        (m.modifier ? " " + m.modifier : "");
+              return `<li>${w}${x.name ? " on " + esc(x.name) : ""} (${Math.round(x.distance)} m)</li>`;
+            })
+            .join("");
+          info.innerHTML = `<b>${esc(a.name.split(",")[0])} to ${esc(b.name.split(",")[0])}</b><br>Distance ${(rt.distance / 1000).toFixed(1)} km | Drive time about ${Math.round(rt.duration / 60)} min | Arrive around ${new Date(Date.now() + rt.duration * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<ol>${st}</ol>`;
+          act(
+            "Route planned: " +
+              a.name.split(",")[0] +
+              " to " +
+              b.name.split(",")[0],
+          );
+        } catch (e) {
+          info.textContent = /fetch/i.test(e.message)
+            ? "Could not reach the map services. Check your internet connection."
+            : e.message;
+        }
+      }
+      function startTrack() {
+        if (!TR) {
+          $("tinfo").textContent = "Find a route first.";
+          return;
+        }
+        stopTrack();
+        let i = 0;
+        const last = TR.pts.length - 1,
+          tot = TR.cum[last] || 1,
+          mk = L.circleMarker(TR.pts[0], {
+            radius: 10,
+            color: "#fff",
+            fillColor: "#fbbf24",
+            fillOpacity: 1,
+          }).addTo(TL),
+          tr = L.polyline([TR.pts[0]], { color: "#f472b6", weight: 7 }).addTo(
+            TL,
+          );
+        TT = setInterval(() => {
+          i = Math.min(last, i + Math.max(1, +$("tsp").value));
+          const p = TR.pts[i],
+            f = TR.cum[i] / tot;
+          mk.setLatLng(p);
+          tr.addLatLng(p);
+          $("tlive").textContent =
+            i >= last
+              ? "Arrived at the destination."
+              : `Simulated live tracking: ${Math.round(f * 100)}% done | ${((TR.dist * (1 - f)) / 1000).toFixed(1)} km left | about ${Math.max(1, Math.round((TR.dur * (1 - f)) / 60))} min to go`;
+          if (i >= last) {
+            stopTrack();
+            act("Tracked unit arrived at " + TR.b.name.split(",")[0]);
+          }
+        }, 120);
+      }
+      function trackerR() {
+        const el = $("trk");
+        if (typeof L == "undefined") {
+          el.innerHTML =
+            "<h2>Route tracker</h2><p>The map did not load. Check your internet connection.</p>";
+          return;
+        }
+        if (!el.dataset.b) {
+          el.dataset.b = 1;
+          el.innerHTML = `<h2>Route tracker: from where to where</h2><div class="pan"><div class="row"><label>From<br><select id="tf"></select></label><label>or type a place<br><input id="tfa" placeholder="e.g. Majestic, Bengaluru"></label><label>To<br><select id="tt"></select></label><label>or type a place<br><input id="tta" placeholder="e.g. Victoria Hospital, Bengaluru"></label></div>
+<div class="row"><button id="tgo">Find route</button><button class="alt" id="tsw">Swap</button><button class="alt" id="tpl">Start live tracking</button><button class="alt" id="tmis">Save as rescue mission</button><button class="alt" id="tme">Track my real location</button><button class="alt" id="thos">Nearest hospital from destination</button><label>Speed <input type="range" id="tsp" min="1" max="20" value="6"></label></div>
+<div id="tinfo">Choose a start and a destination, then press Find route.</div><div id="tlive"></div></div><div id="tmap"></div>`;
+          TM = L.map("tmap").setView([12.9716, 77.5946], 11);
+          L.control.layers(baseMaps(TM)).addTo(TM);
+          setTimeout(() => TM.invalidateSize(), 300);
+          TL = L.layerGroup().addTo(TM);
+          $("tgo").onclick = findRoute;
+          $("thos").onclick = nearHosp;
+          $("tpl").onclick = startTrack;
+          $("tsw").onclick = () => {
+            const a = $("tf").value,
+              b = $("tt").value;
+            $("tf").value = [...$("tf").options].some((o) => o.value == b)
+              ? b
+              : "addr";
+            $("tt").value = [...$("tt").options].some((o) => o.value == a)
+              ? a
+              : "addr";
+            const x = $("tfa").value;
+            $("tfa").value = $("tta").value;
+            $("tta").value = x;
+          };
+          $("tmis").onclick = () => {
+            if (!TR) {
+              $("tinfo").textContent = "Find a route first.";
+              return;
+            }
+            D.mis.unshift({
+              name:
+                "Dispatch: " +
+                TR.a.name.split(",")[0] +
+                " to " +
+                TR.b.name.split(",")[0],
+              robot: TR.a.name.split(",")[0],
+              incident: TR.b.name.split(",")[0],
+              status: "Planned",
+              notes: `${(TR.dist / 1000).toFixed(1)} km, about ${Math.round(TR.dur / 60)} min`,
+            });
+            act("Dispatch mission saved");
+            save();
+            $("tinfo").insertAdjacentHTML(
+              "beforeend",
+              "<p>Saved on the Missions page.</p>",
+            );
+          };
+          $("tme").onclick = () => {
+            if (TW != null) {
+              navigator.geolocation.clearWatch(TW);
+              TW = null;
+              $("tme").textContent = "Track my real location";
+              return;
+            }
+            if (!navigator.geolocation) {
+              alert("Location is not supported here.");
+              return;
+            }
+            $("tme").textContent = "Stop tracking my location";
+            let mk = null,
+              ac = null;
+            TW = navigator.geolocation.watchPosition(
+              (p) => {
+                const q = [p.coords.latitude, p.coords.longitude];
+                if (!mk) {
+                  mk = L.circleMarker(q, {
+                    radius: 9,
+                    color: "#fff",
+                    fillColor: "#3b82f6",
+                    fillOpacity: 1,
+                  }).addTo(TM);
+                  ac = L.circle(q, {
+                    radius: p.coords.accuracy,
+                    weight: 1,
+                  }).addTo(TM);
+                  TM.setView(q, 15);
+                } else {
+                  mk.setLatLng(q);
+                  ac.setLatLng(q);
+                  ac.setRadius(p.coords.accuracy);
+                }
+                $("tlive").textContent =
+                  `You are at ${q[0].toFixed(5)}, ${q[1].toFixed(5)} (accuracy ${Math.round(p.coords.accuracy)} m)` +
+                  (TR
+                    ? `; ${hav({ lat: q[0], lng: q[1] }, TR.b).toFixed(2)} km in a straight line from the destination`
+                    : "");
+              },
+              (e) => {
+                $("tlive").textContent =
+                  "Could not get your location: " + e.message;
+              },
+              { enableHighAccuracy: true },
+            );
+          };
+        }
+        $("tf").innerHTML =
+          opt("Type a place in the box", "addr") +
+          opt("My current location", "me") +
+          D.rob.map((r) => opt("Robot: " + r.name, ll(r))).join("") +
+          D.she.map((r) => opt("Shelter: " + r.name, ll(r))).join("");
+        $("tt").innerHTML =
+          opt("Type a place in the box", "addr") +
+          D.inc.map((r) => opt("Incident: " + r.title, ll(r))).join("") +
+          D.sur.map((r) => opt("Survivor: " + r.name, ll(r))).join("") +
+          D.she.map((r) => opt("Shelter: " + r.name, ll(r))).join("");
+        if (D.rob.length) $("tf").selectedIndex = 2;
+        if (D.inc.length) $("tt").selectedIndex = 1;
+        TM.invalidateSize();
+        if (PRE) {
+          $("tf").value = PRE[0];
+          $("tt").value = PRE[1];
+          PRE = null;
+          findRoute();
+        }
+      }
+      /* ---------- base maps, robots, voice, weather ---------- */
+      function baseMaps(m) {
+        const a = "&copy; OpenStreetMap contributors &copy; CARTO",
+          c = { subdomains: "abcd", maxZoom: 19, attribution: a };
+        const b = {
+          Street: L.tileLayer(
+            "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+            c,
+          ),
+          Dark: L.tileLayer(
+            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            c,
+          ),
+          Satellite: L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            { maxZoom: 19, attribution: "Tiles &copy; Esri" },
+          ),
+          OpenStreetMap: L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" },
+          ),
+        };
+        b.Street.addTo(m).once("tileerror", () => {
+          if ($("mst"))
+            $("mst").textContent =
+              "Some map tiles did not load. Try another base map using the layers button on the map.";
+        });
+        return b;
+      }
+      let MV = [],
+        MT = null;
+      function deployAll() {
+        const o = D.inc.filter(
+            (i) => !["Resolved", "Closed"].includes(i.status),
+          ),
+          rs = D.rob.filter((r) => r.status == "Online");
+        if (!o.length || !rs.length) {
+          say("No ready robots, or no active incidents.");
+          return;
+        }
+        rs.forEach((r) => {
+          const t = o
+            .map((i) => ({ i, d: hav(r, i) }))
+            .sort((x, y) => x.d - y.d)[0].i;
+          r.status = "Deployed";
+          MV.push({ r, t, n: 0, s: { lat: r.lat, lng: r.lng } });
+          D.mis.unshift({
+            name: "Auto dispatch: " + r.name,
+            robot: r.name,
+            incident: t.title,
+            status: "Active",
+            notes: "Sent to the nearest active incident",
+          });
+          act(r.name + " deployed to " + t.title);
+        });
+        say(
+          rs.length +
+            " robot" +
+            (rs.length > 1 ? "s" : "") +
+            " deployed to the nearest incidents.",
+        );
+        clearInterval(MT);
+        MT = setInterval(() => {
+          MV.forEach((o) => {
+            if (o.n < 80) {
+              o.n++;
+              const f = o.n / 80;
+              o.r.lat = o.s.lat + (o.t.lat - o.s.lat) * f;
+              o.r.lng = o.s.lng + (o.t.lng - o.s.lng) * f;
+              o.r.battery = Math.max(0, +(o.r.battery - 0.15).toFixed(1));
+              if (o.n == 80) act(o.r.name + " arrived at " + o.t.title);
+            }
+          });
+          drawMap();
+          if (MV.every((o) => o.n >= 80)) {
+            clearInterval(MT);
+            MV = [];
+            save();
+            drawMap();
+          }
+        }, 150);
+      }
+      $("bd").onclick = deployAll;
+      function say(t) {
+        const b = $("bub");
+        if (b) b.textContent = t;
+        const bt = $("bot");
+        if (bt) {
+          bt.classList.add("talk");
+          setTimeout(
+            () => bt.classList.remove("talk"),
+            Math.min(6000, t.length * 70),
+          );
+        }
+        try {
+          speechSynthesis.cancel();
+          speechSynthesis.speak(new SpeechSynthesisUtterance(t));
+        } catch (e) {}
+      }
+      function statusLine() {
+        const o = D.inc.filter(
+          (i) => !["Resolved", "Closed"].includes(i.status),
+        );
+        return `${o.length} active incident${o.length == 1 ? "" : "s"}, ${o.filter((i) => i.sev == "Critical").length} critical. ${D.rob.filter((r) => r.status == "Online").length} robots ready and ${D.sur.filter((s) => s.status != "Rescued").length} survivors still need help.`;
+      }
+      window.botTalk = () => say(statusLine());
+      window.voice = () => {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+          say("Voice commands need Chrome or Edge.");
+          return;
+        }
+        const r = new SR();
+        r.lang = "en-IN";
+        r.onresult = (e) => {
+          const t = e.results[0][0].transcript.toLowerCase(),
+            G = [
+              [
+                /deploy/,
+                () => {
+                  show("mapp");
+                  deployAll();
+                },
+              ],
+              [/map/, () => show("mapp")],
+              [/route|track/, () => show("trk")],
+              [/simulat/, () => show("sim")],
+              [/alert|emergency|incident/, () => show("inc")],
+              [/first aid/, () => show("aid")],
+              [/mission/, () => show("mis")],
+              [/status|report/, () => say(statusLine())],
+              [/dashboard|home/, () => show("dash")],
+            ],
+            g = G.find((x) => x[0].test(t));
+          if (g) {
+            g[1]();
+            if (!/deploy|status|report/.test(t)) say("Opening " + t);
+          } else
+            say(
+              "I heard: " +
+                t +
+                ". Try: open map, deploy robots, plan route, or status report.",
+            );
+        };
+        r.onerror = () =>
+          say("I could not hear you. Allow the microphone and try again.");
+        r.start();
+        say("Listening...");
+      };
+      addEventListener("mousemove", (e) => {
+        const b = $("bot");
+        if (!b) return;
+        const r = b.getBoundingClientRect(),
+          dx = e.clientX - (r.left + r.width / 2),
+          dy = e.clientY - (r.top + r.height / 2),
+          m = Math.hypot(dx, dy) || 1,
+          k = Math.min(5, m / 40);
+        b.querySelectorAll(".pp").forEach(
+          (p) =>
+            (p.style.transform = `translate(${(dx / m) * k}px,${(dy / m) * k}px)`),
+        );
+      });
+      function wx() {
+        fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${PK[0]}&longitude=${PK[1]}&current=temperature_2m,precipitation,wind_speed_10m`,
+        )
+          .then((r) => r.json())
+          .then((j) => {
+            const c = j.current,
+              k =
+                c.wind_speed_10m > 50 || c.precipitation > 10
+                  ? "High"
+                  : c.wind_speed_10m > 30 || c.precipitation > 2
+                    ? "Moderate"
+                    : "Low";
+            if ($("wx"))
+              $("wx").innerHTML =
+                `${c.temperature_2m}\u00B0C | Rain ${c.precipitation} mm | Wind ${c.wind_speed_10m} km/h<br>Weather risk for rescue operations: <span class="tag ${k == "High" ? "Critical" : k == "Moderate" ? "Warning" : "Informational"}">${k}</span>`;
+          })
+          .catch(() => {
+            if ($("wx"))
+              $("wx").textContent =
+                "Weather unavailable. Check your internet connection.";
+          });
+      }
+      function dashInit() {
+        document.querySelectorAll(".kpi b").forEach((b) => {
+          const n = parseInt(b.textContent);
+          if (isNaN(n) || /\D/.test(b.textContent)) return;
+          let i = 0;
+          const t = setInterval(() => {
+            b.textContent = Math.round((n * ++i) / 20);
+            if (i >= 20) clearInterval(t);
+          }, 30);
+        });
+        wx();
+        cards(
+          [
+            "ASIMO",
+            "Atlas (robot)",
+            "Spot (robot)",
+            "Pepper (robot)",
+            "NAO (robot)",
+            "Sophia (robot)",
+          ],
+          "botG",
+        );
+      }
+      async function nearHosp() {
+        const info = $("tinfo");
+        info.textContent = "Looking for the nearest hospital...";
+        try {
+          const b = await pt("tt", "tta"),
+            r = await fetch(
+              "https://overpass-api.de/api/interpreter?data=" +
+                encodeURIComponent(
+                  `[out:json][timeout:20];node[amenity=hospital](around:10000,${b.lat},${b.lng});out 30;`,
+                ),
+            ),
+            j = await r.json();
+          if (!j.elements.length)
+            throw new Error("No hospital found within 10 km.");
+          const h = j.elements
+            .map((e) => ({
+              lat: e.lat,
+              lng: e.lon,
+              n: (e.tags && e.tags.name) || "Hospital",
+              d: hav(b, { lat: e.lat, lng: e.lon }),
+            }))
+            .sort((x, y) => x.d - y.d)[0];
+          $("tf").insertAdjacentHTML(
+            "afterbegin",
+            opt("Site: " + b.name.split(",")[0], b.lat + "," + b.lng),
+          );
+          $("tt").insertAdjacentHTML(
+            "afterbegin",
+            opt("Hospital: " + h.n, h.lat + "," + h.lng),
+          );
+          $("tf").selectedIndex = 0;
+          $("tt").selectedIndex = 0;
+          findRoute();
+        } catch (e) {
+          info.textContent = /fetch/i.test(e.message)
+            ? "Could not reach the map services. Check your internet connection."
+            : e.message;
+        }
+      }
+      /* ---------- real content ---------- */
+      const wc = {};
+      async function wiki(t) {
+        if (wc[t]) return wc[t];
+        try {
+          const r = await fetch(
+            "https://en.wikipedia.org/api/rest_v1/page/summary/" +
+              encodeURIComponent(t),
+          );
+          if (!r.ok) return null;
+          return (wc[t] = await r.json());
+        } catch (e) {
+          return null;
+        }
+      }
+      const short = (x) =>
+        (x || "").split(". ").slice(0, 2).join(". ").replace(/\.?$/, ".");
+      const card = (j) =>
+        `<div class="card">${j.thumbnail ? `<img src="${esc(j.thumbnail.source)}" alt="${esc(j.title)}" loading="lazy">` : ""}<b>${esc(j.title)}</b><p>${esc(short(j.extract))}</p><small><a href="${esc(j.content_urls.desktop.page)}" target="_blank" rel="noopener">Read more</a></small></div>`;
+      async function cards(list, id) {
+        const b = $(id);
+        if (b.dataset.d) return;
+        b.dataset.d = 1;
+        b.innerHTML = "<p>Loading photos and facts...</p>";
+        const h = (await Promise.all(list.map(wiki)))
+          .filter(Boolean)
+          .map(card)
+          .join("");
+        b.innerHTML =
+          h || "<p>Could not load. Check your internet connection.</p>";
+        if (!h) delete b.dataset.d;
+      }
+      function loadHome() {
+        if (!$("hI").dataset.l) {
+          $("hI").dataset.l = 1;
+          wiki("Urban search and rescue").then((j) => {
+            const im =
+              j &&
+              (j.originalimage && j.originalimage.width <= 2400
+                ? j.originalimage
+                : j.thumbnail);
+            if (im) {
+              $("hI").src = im.source;
+              $("hI").style.display = "block";
+              $("hC").textContent = j.title + " (Wikipedia)";
+            }
+          });
+        }
+        cards(
+          [
+            "2023 Turkey\u2013Syria earthquakes",
+            "Search and rescue dog",
+            "Unmanned aerial vehicle",
+          ],
+          "hG",
+        );
+      }
+      function loadTech() {
+        cards(
+          [
+            "Thermography",
+            "Ground-penetrating radar",
+            "Acoustic location",
+            "Search and rescue dog",
+            "Radar",
+            "Remote sensing",
+            "Satellite imagery",
+            "Sonar",
+            "Unmanned aerial vehicle",
+            "Snake robot",
+            "Remotely operated underwater vehicle",
+            "Simultaneous localization and mapping",
+            "Lidar",
+            "Aerial firefighting",
+            "Rescue boat",
+            "Urban search and rescue",
+            "Earthquake warning system",
+            "Tsunami warning system",
+            "Common Alerting Protocol",
+            "Cell Broadcast",
+            "Wireless sensor network",
+            "Seismometer",
+            "Geographic information system",
+            "Incident Command System",
+            "Hydraulic rescue tools",
+            "Triage",
+            "Tourniquet",
+            "Automated external defibrillator",
+            "Self-contained breathing apparatus",
+            "Gas detector",
+            "Emergency shelter",
+            "Flood barrier",
+            "Mesh networking",
+            "Search and rescue transponder",
+          ],
+          "techG",
+        );
+      }
+      /* ---------- preparedness, first aid, kit ---------- */
+      const P = {
+        Earthquake: [
+          "Secure heavy furniture and know safe spots (under sturdy tables, away from windows).",
+          "During shaking: Drop, Cover, Hold On. Do not run outside.",
+          "After: check for injuries, gas leaks and damage; expect aftershocks.",
+          "Keep shoes, a torch and a whistle near your bed.",
+          "Use stairs, never lifts, to leave a damaged building.",
+        ],
+        Flood: [
+          "Know your evacuation route and higher ground.",
+          "Move valuables and documents upstairs; switch off power if water enters.",
+          "Never walk or drive through floodwater.",
+          "Store drinking water and keep phones charged.",
+          "After: avoid floodwater; boil or treat drinking water.",
+        ],
+        Fire: [
+          "Install smoke alarms and plan two exits from every room.",
+          "Stay low under smoke; touch doors before opening.",
+          "Never use lifts; meet at a fixed point outside.",
+          "Stop, drop and roll if clothes catch fire.",
+          "Call 101 once you are safe outside.",
+        ],
+        "Cyclone / storm": [
+          "Follow official warnings and evacuate when told.",
+          "Secure loose objects; stay away from windows.",
+          "Keep a radio, torch and power bank ready.",
+          "Do not go outside during the calm eye of the storm.",
+          "After: avoid fallen power lines.",
+        ],
+        Landslide: [
+          "Learn warning signs: new cracks, tilting trees, unusual sounds.",
+          "Avoid steep slopes during heavy rain.",
+          "Move sideways out of the path, not downhill.",
+          "Report blocked roads and damaged lines.",
+          "Stay away from the slide area afterwards.",
+        ],
+        "Building collapse": [
+          "Leave damaged buildings immediately.",
+          "If trapped: cover your mouth, tap on pipes or use a whistle; do not shout constantly.",
+          "Do not light matches (gas risk).",
+          "Wait for trained teams before moving debris.",
+          "Call 112 with the exact location.",
+        ],
+      };
+      const PT = {
+        Earthquake: "Earthquake",
+        Flood: "Flood",
+        Fire: "Wildfire",
+        "Cyclone / storm": "Tropical cyclone",
+        Landslide: "Landslide",
+        "Building collapse": "Structural collapse",
+      };
+      $("pSel").innerHTML = Object.keys(P)
+        .map((k) => `<option>${k}</option>`)
+        .join("");
+      $("pSel").onchange = () => {
+        wiki(PT[$("pSel").value]).then((j) => {
+          $("pImg").innerHTML = j && j.thumbnail ? card(j) : "";
+        });
+        $("pOut").innerHTML =
+          "<ul>" +
+          P[$("pSel").value].map((x) => `<li>${x}</li>`).join("") +
+          "</ul><p><b>Emergency kit:</b> water, food, torch, radio, power bank, first aid kit, copies of documents, whistle, medicines.</p>";
+      };
+      $("pSel").onchange();
+      const F = {
+        "Severe bleeding":
+          "Press firmly on the wound with a clean cloth. Do not remove soaked cloth; add more on top. Raise the limb if possible. Call 112/108.",
+        Burns:
+          "Cool with clean running water for 20 minutes. Remove rings and tight items. Cover loosely with a clean non-stick cover. No ice, butter or creams.",
+        "Fracture / suspected spine injury":
+          "Do not move the person unless in danger. Keep head, neck and back still. Support the injured part; call 112/108.",
+        "Heat exhaustion / heatstroke":
+          "Move to shade, loosen clothing, cool with water and fanning, give sips of water if fully awake. Heatstroke (confusion, no sweating) is an emergency.",
+        "Not breathing (CPR)":
+          "Call 112. Push hard and fast in the centre of the chest, about 100-120 per minute, until help arrives. Train with a certified course.",
+        Choking:
+          "Encourage coughing. If unable to breathe or cough: 5 back blows, then 5 abdominal thrusts, repeat. Call 112.",
+        "Crush injury":
+          "Do not pull out trapped people yourself if rescuers are coming. Keep them warm and calm, control bleeding, and tell rescuers how long they were trapped.",
+      };
+      $("aidG").innerHTML = Object.entries(F)
+        .map(([k, v]) => `<div class="card"><b>${k}</b><p>${v}</p></div>`)
+        .join("");
+      const K = [
+        "Sterile gauze and dressings",
+        "Adhesive bandages",
+        "Crepe bandage",
+        "Medical tape",
+        "Antiseptic wipes or solution",
+        "Disposable gloves",
+        "Scissors and tweezers",
+        "Digital thermometer",
+        "Oral rehydration salts",
+        "Personal prescription medicines",
+        "Burn dressing",
+        "Emergency blanket",
+        "Torch with spare batteries",
+        "Whistle",
+        "Face masks",
+        "List of emergency numbers",
+      ];
+      let kc = ls("kit", {});
+      function kitR() {
+        $("kitL").innerHTML = K.map(
+          (k, i) =>
+            `<label style="display:block"><input type="checkbox" data-i="${i}" ${kc[i] ? "checked" : ""}> ${k}</label>`,
+        ).join("");
+        kitC();
+      }
+      const kitC = () =>
+        ($("kitC").textContent =
+          `Packed: ${K.filter((k, i) => kc[i]).length} of ${K.length}`);
+      $("kitL").onchange = (e) => {
+        kc[e.target.dataset.i] = e.target.checked;
+        sv_("kit", kc);
+        kitC();
+      };
+      /* ---------- real robot ---------- */
+      let RB = null,
+        rt;
+      const rst = (t) => ($("rst").textContent = t);
+      function rcmd(d) {
+        if (!RB) return;
+        fetch(`http://${RB}/cmd?d=${d}`, { mode: "no-cors" }).catch(() =>
+          rst("Connection lost: robot should stop"),
+        );
+      }
+      function poll() {
+        fetch(`http://${RB}/telemetry`)
+          .then((r) => r.json())
+          .then((j) => {
+            $("rtel").textContent =
+              `Distance: ${j.dist} cm | Battery: ${j.bat} | Mode: ${j.mode || "manual"}`;
+            rst("Connected");
+          })
+          .catch(() => rst("Disconnected"));
+      }
+      $("rcon").onclick = () => {
+        RB = $("rip").value.trim();
+        if (!RB) return;
+        clearInterval(rt);
+        poll();
+        rt = setInterval(poll, 2000);
+      };
+      document.querySelectorAll("[data-d]").forEach((b) => {
+        b.onpointerdown = () => rcmd(b.dataset.d);
+        b.onpointerup = b.onpointerleave = () => rcmd("S");
+      });
+      $("estop").onclick = () => {
+        rcmd("S");
+        rcmd("S");
+        rcmd("S");
+      };
+      const KM = {
+        ArrowUp: "F",
+        ArrowDown: "B",
+        ArrowLeft: "L",
+        ArrowRight: "R",
+      };
+      addEventListener("keydown", (e) => {
+        if ($("robot").classList.contains("on") && KM[e.key] && !e.repeat) {
+          e.preventDefault();
+          rcmd(KM[e.key]);
+        }
+      });
+      addEventListener("keyup", (e) => {
+        if ($("robot").classList.contains("on") && KM[e.key]) rcmd("S");
+      });
+      /* ---------- reports ---------- */
+      const dl = (n, t, m) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([t], { type: m }));
+        a.download = n;
+        a.click();
+      };
+      $("rSum").onclick = () =>
+        dl(
+          "rescue-summary.txt",
+          `RESCUE SUMMARY ${new Date().toLocaleString()}\nIncidents: ${D.inc.length} (active ${D.inc.filter((i) => !["Resolved", "Closed"].includes(i.status)).length})\nRobots: ${D.rob.length}\nSurvivors recorded: ${D.sur.length}, rescued ${D.sur.filter((s) => s.status == "Rescued").length}\nMissions: ${D.mis.length}\nTeams: ${D.tem.length}\n\nINCIDENTS\n${D.inc.map((i) => `- ${i.title} | ${i.sev} | ${i.status}`).join("\n")}\n\nMISSIONS\n${D.mis.map((m) => `- ${m.name} | ${m.status} | ${m.notes}`).join("\n")}\n\nACTIVITY\n${D.act.join("\n")}\n`,
+          "text/plain",
+        );
+      $("rJson").onclick = () =>
+        dl("rescue-data.json", JSON.stringify(D, null, 2), "application/json");
+      $("rReset").onclick = () => {
+        if (confirm("Replace all records with the sample data?")) {
+          D = JSON.parse(JSON.stringify(SEED));
+          save();
+          alert("Sample data restored.");
+        }
+      };
+      gen();
+      show("dash");
+    </script>
+  </body>
+</html>
